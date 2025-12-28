@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  prompt-hub:
+    image: luojiutian007/prompt-hub:latest
+    container_name: prompt-hub-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data       # 数据库文件挂载
+      - ./uploads:/app/uploads # 媒体文件挂载
+    environment:
+      - TZ=Asia/Shanghai       # 设置时区
