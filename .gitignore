@@ -1,0 +1,13 @@
+# 依赖包 (体积巨大，不需要上传，别人用 npm install 就能装)
+node_modules/
+
+# 你的私有数据 (绝对不能传)
+uploads/
+data/
+
+# 系统生成的垃圾文件
+.DS_Store
+Thumbs.db
+
+# 你的 Docker 镜像文件 (太大了，传 Docker Hub，不传这里)
+*.tar

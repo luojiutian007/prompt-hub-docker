@@ -1,0 +1,19 @@
+{
+  "name": "prompt-hub-nas",
+  "version": "1.0.0",
+  "description": "AI Prompt Manager for NAS",
+  "main": "server/app.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "nodemon server/app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "sqlite3": "^5.1.6",
+    "sequelize": "^6.32.1",
+    "sharp": "^0.32.1",
+    "cors": "^2.8.5",
+    "fs-extra": "^11.1.1"
+  }
+}
