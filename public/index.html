@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 提示词收藏家 (NAS 加速版)</title>
+    <title>AI 提示词收藏家 (NAS极速版)</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        /* 保持你原本漂亮的 UI 样式不变 */
+        /* 保持原本漂亮的 UI 样式 */
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f0f4f8; background-image: radial-gradient(at 0% 0%, rgba(167, 139, 250, 0.15) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(192, 132, 252, 0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(244, 114, 182, 0.15) 0px, transparent 50%), radial-gradient(at 0% 100%, rgba(96, 165, 250, 0.15) 0px, transparent 50%); background-attachment: fixed; background-size: cover; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -751,125 +751,4 @@
                     if (showFavoritesOnly.value && !item.isFavorite) return false;
                     const hasHiddenTag = itemTags.some(t => privacy.value.config.hiddenTags.includes(t));
                     if (privacy.value.config.enabled && !privacy.value.isUnlocked && hasHiddenTag) { if (privacy.value.config.hideMode === 'hidden') return false; }
-                    if (searchQuery.value && !item.title.toLowerCase().includes(searchQuery.value.toLowerCase())) return false;
-                    if (filters.value.mediaType.selected.length) {
-                        const cats = item.categories || [item.category];
-                        const wantsText = filters.value.mediaType.selected.includes('文字'); const wantsImg = filters.value.mediaType.selected.includes('图片'); const wantsVideo = filters.value.mediaType.selected.includes('视频');
-                        let match = false;
-                        if (wantsText && cats.includes('t2t')) match = true; if (wantsImg && (cats.includes('t2i') || cats.includes('i2i'))) match = true; if (wantsVideo && (cats.includes('t2v'))) match = true;
-                        if (!match) return false;
-                    }
-                    if (filterState.value.tags.length > 0) { if (!filterState.value.tags.every(tag => itemTags.includes(tag))) return false; }
-                    if (filterState.value.tools.length > 0) { if (!filterState.value.tools.every(tool => (item.tools||[]).includes(tool))) return false; }
-                    if (filterState.value.models.length > 0) { if (!filterState.value.models.every(model => (item.models||[]).includes(model))) return false; }
-                    return true;
-                });
-                list.sort((a, b) => { let valA = a[sortConfig.value.key]; let valB = b[sortConfig.value.key]; if (typeof valA === 'string') { valA = valA.toLowerCase(); valB = valB.toLowerCase(); } if (valA < valB) return sortConfig.value.order === 'asc' ? -1 : 1; if (valA > valB) return sortConfig.value.order === 'asc' ? 1 : -1; return 0; });
-                return list;
-            });
-
-            const toggleSortOrder = () => { sortConfig.value.order = sortConfig.value.order === 'asc' ? 'desc' : 'asc'; };
-            const createNew = () => { const now = Date.now(); currentItem.value = { id: now, createdTime: now, updatedTime: now, title: '新创意', category: 't2i', categories: ['t2i'], mediaList: [], tags: [], prompt: '', tools: [], models: [], resultText: '', history: [], note: '', isFavorite: false }; editingCategory.value = '图片'; isEditing.value = true; isCreating.value = true; activeMediaIndex.value = 0; modals.value.detail = true; };
-            const getCategoryLabel = (item) => { const cats = item.categories || []; if (cats.includes('t2t')) return 'TEXT'; if (cats.includes('t2v')) return 'VIDEO'; return 'IMAGE'; };
-            const openDetail = (item) => { if(shouldBlur(item) || (privacy.value.config.enabled && !privacy.value.isUnlocked && isItemPrivate(item))) { handleEyeClick(); return; } const clone = JSON.parse(JSON.stringify(item)); if (!clone.categories) clone.categories = [clone.category || 't2i']; if (!clone.tools) clone.tools = []; if (!clone.models) clone.models = []; if (!clone.tags) clone.tags = []; if (!clone.mediaList) clone.mediaList = []; currentItem.value = clone; if (clone.categories.includes('t2t')) editingCategory.value = '文字'; else if (clone.categories.includes('t2v')) editingCategory.value = '视频'; else editingCategory.value = '图片'; activeMediaIndex.value = 0; isEditing.value = false; isCreating.value = false; modals.value.detail = true; modals.value.history = false; };
-            const quickEdit = (item) => { openDetail(item); isEditing.value = true; };
-            const startEdit = () => { isEditing.value = true; };
-            const cancelEdit = () => { if (isCreating) { modals.value.detail = false; } else { openDetail(prompts.value.find(p => p.id === currentItem.value.id)); isEditing.value = false; } };
-            const viewHistoryItem = (log) => { selectedHistoryLog.value = log; activeMediaIndex.value = 0; }
-            const restoreVersion = (log) => { if(!confirm("确定要恢复到此版本吗？这将覆盖当前内容。")) return; const snapshot = log.snapshot; currentItem.value = JSON.parse(JSON.stringify(snapshot)); currentItem.value.history = JSON.parse(JSON.stringify(prompts.value.find(p => p.id === currentItem.value.id)?.history || [])); saveItem(); showToast("已恢复到版本", "success"); modals.value.history = false; modals.value.detail = true; isEditing.value = false; };
-            
-            const triggerLocalUpload = () => { if (fileInput.value) fileInput.value.click(); modals.value.upload = false; };
-            const triggerUrlInput = () => { modals.value.upload = false; mockUpload(); };
-            const triggerPasteInput = () => { modals.value.upload = false; showToast("请直接按 Ctrl+V 粘贴", "info"); };
-            const mockUpload = () => { const url = prompt("请输入图片/视频 URL:", ""); if(url) { if(!currentItem.value.mediaList) currentItem.value.mediaList = []; currentItem.value.mediaList.push(url); showToast("链接添加成功", "success"); } };
-            const handleFileUpload = (e) => { const files = e.target.files; if (!files.length) return; for (let i = 0; i < files.length; i++) { processFile(files[i]); } e.target.value = ''; };
-            const handlePaste = (event) => { if (!isEditing.value || !modals.value.detail || editingCategory.value === '文字') return; const items = (event.clipboardData || event.originalEvent.clipboardData).items; for (let index in items) { const item = items[index]; if (item.kind === 'file') { const blob = item.getAsFile(); processFile(blob); } } };
-            
-            const exportData = () => { const dataStr = JSON.stringify(prompts.value, null, 2); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `backup.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
-            const triggerImport = () => { if(importInput.value) importInput.value.click(); };
-            const handleImportData = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); if (Array.isArray(data)) { if(confirm("导入?")) { prompts.value = data; showToast("数据已读入内存(需手动编辑保存)", "info"); modals.value.settings = false; } } } catch (err) { } }; reader.readAsText(file); e.target.value = ''; };
-            
-            const setVideoRef = (el, id) => { if(el) videoRefs.value[id] = el; };
-            const playVideo = (item) => { item.isPlaying = true; const el = videoRefs.value[item.id]; if (el) { el.muted = false; el.play().catch(e => console.error(e)); } };
-            const stopVideo = (item) => { if (item.isPlaying) { item.isPlaying = false; const el = videoRefs.value[item.id]; if (el) { el.pause(); el.currentTime = 0; el.muted = true; } } item.showPlayBtn = false; };
-            const nextCardImage = (item) => { if (!item.mediaList || item.mediaList.length <= 1) return; if (item.activeImgIdx === undefined) item.activeImgIdx = 0; item.activeImgIdx = (item.activeImgIdx + 1) % item.mediaList.length; };
-            const prevCardImage = (item) => { if (!item.mediaList || item.mediaList.length <= 1) return; if (item.activeImgIdx === undefined) item.activeImgIdx = 0; item.activeImgIdx = (item.activeImgIdx - 1 + item.mediaList.length) % item.mediaList.length; };
-            const nextMedia = () => { if (activeMediaIndex.value < currentItem.value.mediaList.length - 1) activeMediaIndex.value++; else activeMediaIndex.value = 0; };
-            const prevMedia = () => { if (activeMediaIndex.value > 0) activeMediaIndex.value--; else activeMediaIndex.value = currentItem.value.mediaList.length - 1; };
-            const shouldBlur = (item) => !privacy.value.config.enabled || privacy.value.isUnlocked ? false : ((item.tags||[]).some(t => privacy.value.config.hiddenTags.includes(t)) && privacy.value.config.hideMode === 'blur');
-            const isItemPrivate = (item) => (item.tags||[]).some(t => privacy.value.config.hiddenTags.includes(t));
-            const eyeButtonText = computed(() => !privacy.value.config.enabled ? '未启用' : (privacy.value.isUnlocked ? '隐私可见' : '已隐藏'));
-            const eyeIconClass = computed(() => !privacy.value.config.enabled ? 'fa-eye-slash text-slate-400' : (privacy.value.isUnlocked ? 'fa-lock-open text-emerald-500' : 'fa-lock text-rose-500'));
-            const eyeButtonClass = computed(() => !privacy.value.config.enabled ? 'bg-white border-slate-200 text-slate-400' : (privacy.value.isUnlocked ? 'bg-emerald-50 border-emerald-100 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100' : 'bg-rose-50 border-rose-100 text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100'));
-            const eyeButtonTitle = computed(() => !privacy.value.config.enabled ? '去设置开启' : (privacy.value.isUnlocked ? '点击锁定' : '点击解锁'));
-            const handleEyeClick = () => { if (!privacy.value.config.enabled) { openSettings(); settingsTab.value='privacy'; } else if (privacy.value.isUnlocked) { privacy.value.isUnlocked = false; showToast("隐私内容已锁定"); } else { inputPassword.value = ''; modals.value.password = true; } };
-            const unlockPrivacy = () => { if (inputPassword.value === privacy.value.config.password) { privacy.value.isUnlocked = true; modals.value.password = false; showToast("解锁成功", "success"); } else { showToast("密码错误", "error"); } };
-            const openSettings = () => { tempConfig.value = JSON.parse(JSON.stringify(privacy.value.config)); newHiddenTag.value = ''; modals.value.settings = true; };
-            const closeSettings = (save) => { if (save) { privacy.value.config = JSON.parse(JSON.stringify(tempConfig.value)); if (!privacy.value.config.enabled) privacy.value.isUnlocked = false; showToast("设置已保存", "success"); } modals.value.settings = false; };
-            const formatDate = (ts) => new Date(ts).toLocaleString();
-            const toggleFilter = (key, val) => { if (key === 'mediaType') { const s = filters.value.mediaType.selected; s.includes(val) ? s.splice(s.indexOf(val),1) : s.push(val); } else { const s = filterState.value[key]; s.includes(val) ? s.splice(s.indexOf(val),1) : s.push(val); } };
-            const addHiddenTag = () => { if (newHiddenTag.value && !tempConfig.value.hiddenTags.includes(newHiddenTag.value)) { tempConfig.value.hiddenTags.push(newHiddenTag.value); newHiddenTag.value = ''; } };
-            const addHiddenTagFromList = (tag) => { if (!tempConfig.value.hiddenTags.includes(tag)) { tempConfig.value.hiddenTags.push(tag); } };
-            const removeHiddenTag = (tag) => { const idx = tempConfig.value.hiddenTags.indexOf(tag); if (idx > -1) tempConfig.value.hiddenTags.splice(idx, 1); };
-            const getTagStyle = (tag) => { const colors = [ 'bg-blue-50 text-blue-600 border-blue-100', 'bg-purple-50 text-purple-600 border-purple-100', 'bg-emerald-50 text-emerald-600 border-emerald-100', 'bg-rose-50 text-rose-600 border-rose-100', 'bg-amber-50 text-amber-600 border-amber-100', 'bg-cyan-50 text-cyan-600 border-cyan-100' ]; let hash = 0; for (let i = 0; i < tag.length; i++) hash = tag.charCodeAt(i) + ((hash << 5) - hash); const index = Math.abs(hash) % colors.length; return colors[index] + ' border'; };
-            const isTextCard = (item) => item.category === 't2t' || (item.categories && item.categories.includes('t2t'));
-            const isVideo = (url) => { if (!url) return false; if (url.startsWith('data:video')) return true; const ext = url.split('.').pop().toLowerCase(); return ['mp4', 'webm', 'ogg', 'mov'].includes(ext); };
-            const toggleItemCategory = (cat) => { };
-            const addRecTool = (val) => { if(!currentItem.value.tools) currentItem.value.tools = []; if (val && !currentItem.value.tools.includes(val)) { currentItem.value.tools.push(val); newToolInput.value = ''; } };
-            const addItemTool = () => addRecTool(newToolInput.value);
-            const addRecModel = (val) => { if(!currentItem.value.models) currentItem.value.models = []; if (val && !currentItem.value.models.includes(val)) { currentItem.value.models.push(val); newModelInput.value = ''; } };
-            const addItemModel = () => addRecModel(newModelInput.value);
-            const copyText = (text) => {
-                if (!text) return;
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(() => showToast('已复制', 'success')).catch(err => fallbackCopy(text));
-                } else { fallbackCopy(text); }
-            };
-            const fallbackCopy = (text) => {
-                const textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select();
-                try { document.execCommand('copy'); showToast('已复制', 'success'); } catch (err) { showToast('无法复制', 'error'); }
-                document.body.removeChild(textArea);
-            };
-            const addRecTag = (tag) => { if(!currentItem.value.tags) currentItem.value.tags = []; if (!currentItem.value.tags.includes(tag)) { currentItem.value.tags.push(tag); } }
-            const duplicatePrompt = (item) => { const newItem = JSON.parse(JSON.stringify(item)); newItem.id = null; newItem.title = newItem.title + ' (副本)'; currentItem.value = newItem; saveItem(); };
-            const removeCurrentMedia = () => { if (currentItem.value.mediaList && currentItem.value.mediaList.length > 0) { currentItem.value.mediaList.splice(activeMediaIndex.value, 1); if (activeMediaIndex.value >= currentItem.value.mediaList.length) { activeMediaIndex.value = Math.max(0, currentItem.value.mediaList.length - 1); } } }
-            const switchViewMode = (mode) => { viewMode.value = mode; sliderVal.value = mode === 'card' ? 2 : 5; };
-            const handleCardClick = (item) => { if(shouldBlur(item)) { handleEyeClick(); } else { openDetail(item); } };
-            const toggleFavorite = async (item) => { 
-                item.isFavorite = !item.isFavorite; 
-                try {
-                     await fetch('/api/prompts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) });
-                     showToast(item.isFavorite ? '已收藏' : '已取消收藏', 'success');
-                } catch(e) { console.error(e); }
-            };
-            const toggleFavoritesFilter = () => { showFavoritesOnly.value = !showFavoritesOnly.value; showToast(showFavoritesOnly.value ? '只显示收藏内容' : '显示全部内容'); };
-
-            watch(() => privacy.value.config, (newVal) => { localStorage.setItem('prompt-hub-privacy', JSON.stringify(newVal)); }, { deep: true });
-
-            onMounted(() => {
-                loadData(); // 启动时加载后端数据
-                const savedWidth = localStorage.getItem('sidebarWidth');
-                if (savedWidth) sidebarWidth.value = parseInt(savedWidth);
-                const savedPrivacy = localStorage.getItem('prompt-hub-privacy');
-                if(savedPrivacy) privacy.value.config = JSON.parse(savedPrivacy);
-                window.addEventListener('paste', handlePaste);
-            });
-
-            return {
-                viewMode, sliderVal, searchQuery, isSidebarOpen, modals, inputPassword, currentItem, isEditing, isCreating, activeMediaIndex,
-                filters, dynamicFilters, filterState, privacy, tempConfig, filteredList, sortConfig, newHiddenTag, settingsTab,
-                allTools, allModels, allTags, sidebarWidth, isResizing, isSortMenuOpen, sortOptions, getSortLabel, selectSort, isPromptExpanded, editingCategory, fileInput, importInput, toasts, selectedHistoryLog,
-                shouldBlur, isItemPrivate, eyeButtonText, eyeIconClass, eyeButtonClass, eyeButtonTitle, getCategoryLabel, getToastIcon,
-                handleEyeClick, unlockPrivacy, openSettings, closeSettings, addHiddenTag, removeHiddenTag, resetAllFilters,
-                createNew, openDetail, startEdit, cancelEdit, saveItem, deleteItem, mockUpload, toggleSortOrder, formatDate, toggleFilter, nextMedia, prevMedia, restoreVersion, viewHistoryItem,
-                startResize, stopResize, handleResize, nextCardImage, prevCardImage, getTagStyle, copyText, duplicatePrompt,
-                isTextCard, isVideo, toggleItemCategory, addItemTool, addItemModel, newToolInput, newModelInput, handleFileUpload, addRecTool, addRecModel, addRecTag, removeCurrentMedia,
-                triggerLocalUpload, triggerUrlInput, triggerPasteInput, showToast, exportData, triggerImport, handleImportData,
-                setVideoRef, playVideo, stopVideo, quickEdit, switchViewMode, handleCardClick, toggleFavorite, toggleFavoritesFilter, showFavoritesOnly,
-                addHiddenTagFromList
-            };
-        }
-    }).mount('#app');
-</script>
-</body>
-</html>
+                    if (
